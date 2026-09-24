@@ -1,0 +1,36 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:postgresql://localhost:5434/bytevault_orders
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+# Must be byte-for-byte identical to user-service / product-service / api-gateway
+# so order-service can verify a login JWT on its own.
+jwt:
+  secret: bytevault-marketplace-super-secret-jwt-signing-key-2024-college-project-demo-only
+  expiration-ms: 3600000
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG

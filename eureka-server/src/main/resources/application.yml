@@ -1,0 +1,20 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: eureka-server
+
+eureka:
+  client:
+    # This node is the registry itself, so it doesn't need to register with
+    # itself or fetch a registry from anywhere else.
+    register-with-eureka: false
+    fetch-registry: false
+  instance:
+    hostname: localhost
+
+logging:
+  level:
+    com.netflix.eureka: WARN
+    com.netflix.discovery: WARN

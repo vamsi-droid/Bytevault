@@ -1,0 +1,43 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: product-service
+  datasource:
+    url: jdbc:postgresql://localhost:5434/bytevault_products
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+# Must be byte-for-byte identical to user-service / order-service / api-gateway
+# so product-service can verify a login JWT on its own.
+jwt:
+  secret: bytevault-marketplace-super-secret-jwt-signing-key-2024-college-project-demo-only
+  expiration-ms: 3600000
+
+# Separate secret + much shorter expiry, only ever used inside product-service
+# to issue and check secure per-purchase download links.
+download:
+  jwt:
+    secret: bytevault-download-link-signing-key-distinct-from-login-jwt-2024-demo
+    expiration-ms: 300000
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG

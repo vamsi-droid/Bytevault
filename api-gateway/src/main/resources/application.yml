@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+# Must be byte-for-byte identical to user-service / product-service / order-service
+# so the gateway can reject a bad login JWT before it ever reaches a service.
+jwt:
+  secret: bytevault-marketplace-super-secret-jwt-signing-key-2024-college-project-demo-only
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO

@@ -5,7 +5,22 @@ spring:
   application:
     name: api-gateway
   cloud:
+    # Spring Cloud LoadBalancer caches the Eureka instance list; keep it short so
+    # a second instance starts receiving traffic within seconds.
+    loadbalancer:
+      cache:
+        ttl: 5s
     gateway:
+      # If an instance dies, a GET that hits it is retried; the load balancer
+      # picks the next instance, so the client never sees the failure.
+      # (Only GETs - retrying a POST could create a duplicate order.)
+      default-filters:
+        - name: Retry
+          args:
+            retries: 2
+            methods: GET
+            series: SERVER_ERROR
+            exceptions: java.io.IOException, java.net.ConnectException, org.springframework.cloud.gateway.support.NotFoundException
       routes:
         - id: user-service
           uri: lb://user-service
@@ -20,17 +35,65 @@ spring:
           predicates:
             - Path=/api/orders/**
 
+        # Read-only status routes used by the dashboard page (static/index.html).
+        # /status/<service>/health|info -> that service's /actuator/health|info
+        - id: user-service-status
+          uri: lb://user-service
+          predicates:
+            - Path=/status/user-service/**
+          filters:
+            - RewritePath=/status/user-service/(?<endpoint>.*), /actuator/${endpoint}
+        - id: product-service-status
+          uri: lb://product-service
+          predicates:
+            - Path=/status/product-service/**
+          filters:
+            - RewritePath=/status/product-service/(?<endpoint>.*), /actuator/${endpoint}
+        - id: order-service-status
+          uri: lb://order-service
+          predicates:
+            - Path=/status/order-service/**
+          filters:
+            - RewritePath=/status/order-service/(?<endpoint>.*), /actuator/${endpoint}
+        # Eureka's registry listing, so the page can show registered instances.
+        - id: eureka-registry
+          uri: http://localhost:8761
+          predicates:
+            - Path=/eureka/apps
+
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    registry-fetch-interval-seconds: 5
   instance:
-    prefer-ip-address: true
+    # Register as localhost rather than the machine's network IP: everything
+    # runs on one machine, and a Wi-Fi IP change would otherwise leave Eureka
+    # (and the gateway's load balancer) pointing at a dead address.
+    prefer-ip-address: false
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
 
 # Must be byte-for-byte identical to user-service / product-service / order-service
 # so the gateway can reject a bad login JWT before it ever reaches a service.
 jwt:
   secret: bytevault-marketplace-super-secret-jwt-signing-key-2024-college-project-demo-only
+
+# Exposes /actuator/info (the page Eureka's dashboard links to) and /actuator/health.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: api-gateway
+    description: "Single entry point: routes /api/** to backend services and checks the login JWT at the edge"
+    port: 8080
 
 logging:
   level:

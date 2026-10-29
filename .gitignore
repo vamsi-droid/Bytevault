@@ -14,3 +14,6 @@ target/
 
 # Logs
 *.log
+
+# Process ids written by scripts/start-all.sh
+logs/*.pid

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ByteVault Marketplace</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #e1e4e9;
+    --text: #1b1f24;
+    --muted: #5d6673;
+    --accent: #3b5bdb;
+    --accent-text: #ffffff;
+    --accent-soft: #e8edfd;
+    --ok: #2b8a3e;
+    --ok-soft: #e6f4ea;
+    --warn: #b35c00;
+    --warn-soft: #fff1e0;
+    --bad: #c92a2a;
+    --bad-soft: #fdeaea;
+    --code-bg: #f3f4f7;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111418;
+      --surface: #181c21;
+      --surface-2: #1f242b;
+      --border: #2c323b;
+      --text: #e6e9ee;
+      --muted: #97a1ad;
+      --accent: #748ffc;
+      --accent-text: #0b0e12;
+      --accent-soft: #1f2744;
+      --ok: #69db7c;
+      --ok-soft: #16301d;
+      --warn: #ffa94d;
+      --warn-soft: #33250f;
+      --bad: #ff8787;
+      --bad-soft: #3a1a1a;
+      --code-bg: #14171b;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  code, pre { font-family: var(--mono); font-size: 13px; }
+
+  /* ---------- header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .bar { max-width: 1320px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 17px; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+  .brand .logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: var(--accent-text); display: grid; place-items: center; font-size: 13px; }
+  nav { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+  nav button {
+    border: 0; background: none; padding: 6px 12px; border-radius: 7px; cursor: pointer; color: var(--muted); font-weight: 500;
+  }
+  nav button:hover { background: var(--surface-2); color: var(--text); }
+  nav button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); }
+  .session { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+
+  /* ---------- layout ---------- */
+  .layout { max-width: 1320px; margin: 0 auto; padding: 20px 16px 40px; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
+  @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+  section[hidden] { display: none; }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -.01em; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .lede { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+  .stack > * + * { margin-top: 16px; }
+  .grid { display: grid; gap: 12px; }
+  .grid.status { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .grid.products { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .two { grid-template-columns: 1fr; } }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .spread { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+
+  /* ---------- controls ---------- */
+  .btn {
+    border: 1px solid var(--border); background: var(--surface); padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 500; white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger { color: var(--bad); }
+  .btn.sm { padding: 4px 10px; font-size: 13px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  input, select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+  }
+  input:focus, select:focus, .btn:focus-visible, nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .field + .field { margin-top: 12px; }
+  .form-actions { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ---------- badges ---------- */
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--muted); }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.accent { background: var(--accent-soft); color: var(--accent); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  /* ---------- status cards ---------- */
+  .svc { display: flex; flex-direction: column; gap: 6px; }
+  .svc .name { font-weight: 600; font-family: var(--mono); font-size: 14px; }
+  .svc .desc { font-size: 13px; color: var(--muted); min-height: 38px; }
+
+  /* ---------- architecture ---------- */
+  .arch { display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; align-items: center; font-size: 13px; }
+  .node { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--surface-2); font-family: var(--mono); }
+  .node.hi { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .arrow { color: var(--muted); }
+  .fanout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 600px) { .fanout { grid-template-columns: 1fr; } .arch { grid-template-columns: 1fr; } }
+
+  /* ---------- products ---------- */
+  .product { display: flex; flex-direction: column; gap: 8px; }
+  .product .title { font-weight: 600; }
+  .product .price { font-size: 20px; font-weight: 700; }
+  .empty { text-align: center; padding: 36px 16px; color: var(--muted); border: 1px dashed var(--border); border-radius: var(--radius); }
+
+  /* ---------- tables ---------- */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+  td.num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- code / jwt ---------- */
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+  .jwt { font-family: var(--mono); font-size: 12px; word-break: break-all; line-height: 1.6; }
+  .jwt .h { color: #e8590c; } .jwt .p { color: #7048e8; } .jwt .s { color: #0c8599; }
+  @media (prefers-color-scheme: dark) { .jwt .h { color: #ffa94d; } .jwt .p { color: #b197fc; } .jwt .s { color: #66d9e8; } }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--mono); font-size: 13px; word-break: break-all; }
+
+  .notice { padding: 10px 12px; border-radius: 8px; font-size: 14px; background: var(--surface-2); border: 1px solid var(--border); }
+  .notice.bad { background: var(--bad-soft); border-color: transparent; color: var(--bad); }
+  .notice.ok { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+  .notice.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+
+  /* ---------- api log ---------- */
+  aside.log { position: sticky; top: 76px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; padding: 0; }
+  @media (max-width: 1000px) { aside.log { position: static; max-height: 480px; } }
+  .log-head { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .log-list { overflow-y: auto; flex: 1; }
+  .log-item { padding: 9px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .log-item .line { display: flex; gap: 8px; align-items: center; }
+  .log-item .path { font-family: var(--mono); font-size: 12px; word-break: break-all; flex: 1; }
+  .log-item .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .method { font-family: var(--mono); font-size: 11px; font-weight: 700; min-width: 44px; }
+
+  .captcha-row { display: flex; align-items: center; gap: 8px; }
+  #captcha-canvas { border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); user-select: none; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 50; padding: 10px 16px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.2); opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 32px); }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="brand"><span class="logo">BV</span>ByteVault Marketplace</div>
+    <nav role="tablist" id="nav">
+      <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button role="tab" data-tab="account">Account</button>
+      <button role="tab" data-tab="catalog">Catalog</button>
+      <button role="tab" data-tab="orders">My orders</button>
+      <button role="tab" data-tab="admin">Admin</button>
+    </nav>
+    <div class="session" id="session"></div>
+  </div>
+</header>
+
+<div class="layout">
+  <main>
+
+    <!-- ================= OVERVIEW ================= -->
+    <section id="tab-overview" class="stack">
+      <div>
+        <h1>System overview</h1>
+        <p class="lede">Every request from this page goes through the API gateway on <code>:8080</code>, which finds each service through Eureka.</p>
+      </div>
+
+      <div class="card">
+        <div class="spread" style="margin-bottom:12px">
+          <h2 style="margin:0">Service status</h2>
+          <div class="row"><span class="muted small" id="status-updated"></span><button class="btn sm" id="status-refresh">Refresh</button></div>
+        </div>
+        <div class="grid status" id="status-grid"></div>
+      </div>
+
+      <div class="card">
+        <h2>How a request flows</h2>
+        <div class="arch">
+          <div class="node">Browser (this page)</div><div class="arrow">→ every call goes to the gateway only</div>
+          <div class="node hi">api-gateway :8080</div><div class="arrow">→ checks the login JWT, then routes <code>lb://&lt;service&gt;</code></div>
+          <div class="node">eureka-server :8761</div><div class="arrow">→ tells the gateway (and order-service) where each service lives</div>
+        </div>
+        <div class="fanout" style="margin-top:12px">
+          <div class="node"><b>user-service</b> :8081<br><span class="muted">/api/users/**</span><br><span class="muted">register, login, issue JWT</span></div>
+          <div class="node"><b>product-service</b> :8082<br><span class="muted">/api/products/**</span><br><span class="muted">catalog, admin CRUD, download tokens</span></div>
+          <div class="node"><b>order-service</b> :8083<br><span class="muted">/api/orders/**</span><br><span class="muted">purchase, history; calls product-service via Feign</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Try it</h2>
+        <ol class="small" style="margin:0; padding-left:20px">
+          <li><b>Account</b>: register a user. You get a login JWT, decoded on that tab.</li>
+          <li><b>Admin</b>: add products (needs an ADMIN account; instructions are on that tab).</li>
+          <li><b>Catalog</b>: buy a product. order-service records the order and gets a 5-minute download token from product-service.</li>
+          <li><b>My orders</b>: download it, inspect the download token, or request a fresh one after it expires.</li>
+        </ol>
+        <p class="small muted" style="margin:10px 0 0">The panel on the right logs every API call and which service handled it.</p>
+      </div>
+    </section>
+
+    <!-- ================= ACCOUNT ================= -->
+    <section id="tab-account" class="stack" hidden>
+      <div>
+        <h1>Account</h1>
+        <p class="lede">Handled by <code>user-service</code>. A successful register or login returns a signed JWT that is valid for 1 hour.</p>
+      </div>
+
+      <div id="account-forms" class="two">
+        <form class="card" id="login-form">
+          <h2>Log in</h2>
+          <div class="field"><label for="li-user">Username</label><input id="li-user" autocomplete="username" required></div>
+          <div class="field"><label for="li-pass">Password</label><input id="li-pass" type="password" autocomplete="current-password" required></div>
+          <div class="field">
+            <label for="li-captcha">Captcha</label>
+            <div class="captcha-row">
+              <canvas id="captcha-canvas" width="140" height="44" role="img" aria-label="Captcha image"></canvas>
+              <button class="btn sm" type="button" id="captcha-refresh" title="New captcha" aria-label="New captcha">↻</button>
+            </div>
+            <input id="li-captcha" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="5" required placeholder="Type the characters above" style="margin-top:8px">
+          </div>
+          <div class="form-actions"><button class="btn primary" type="submit">Log in</button></div>
+          <div class="notice bad" id="login-error" hidden style="margin-top:12px"></div>
+        </form>
+        <form class="card" id="register-form">
+          <h2>Create an account</h2>
+          <div class="field"><label for="rg-user">Username</label><input id="rg-user" autocomplete="username" minlength="3" maxlength="50" required></div>
+          <div class="field"><label for="rg-email">Email</label><input id="rg-email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="rg-pass">Password</label><input id="rg-pass" type="password" autocomplete="new-password" minlength="6" required></div>
+          <div class="form-actions"><button class="btn primary" type="submit">Register</button></div>
+          <div class="notice bad" id="register-error" hidden style="margin-top:12px"></div>
+        </form>
+      </div>
+
+      <div id="account-session" class="stack" hidden>
+        <div class="card">
+          <div class="spread" style="margin-bottom:12px">
+            <h2 style="margin:0">Signed in</h2>
+            <button class="btn sm" id="logout-2">Log out</button>
+          </div>
+          <dl class="kv" id="session-kv"></dl>
+        </div>
+        <div class="card">
+          <h2>Your login JWT</h2>
+          <p class="small muted" style="margin-top:0">Sent as <code>Authorization: Bearer …</code> on every protected request. The gateway, product-service and order-service each verify it with the shared <code>jwt.secret</code>.</p>
+          <div class="jwt" id="jwt-raw"></div>
+          <div class="two" style="margin-top:12px">
+            <div><label>Header</label><pre id="jwt-header"></pre></div>
+            <div><label>Payload (claims)</label><pre id="jwt-payload"></pre></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CATALOG ================= -->
+    <section id="tab-catalog" class="stack" hidden>
+      <div class="spread">
+        <div>
+          <h1>Catalog</h1>
+          <p class="lede" style="margin:0">Served by <code>product-service</code>. Anyone can browse; buying needs a login.</p>
+        </div>
+        <button class="btn sm" id="catalog-refresh">Refresh</button>
+      </div>
+      <div class="grid products" id="product-grid"></div>
+    </section>
+
+    <!-- ================= ORDERS ================= -->
+    <section id="tab-orders" class="stack" hidden>
+      <div class="spread">
+        <div>
+          <h1>My orders</h1>
+          <p class="lede" style="margin:0">Served by <code>order-service</code>. Each order holds a download token signed by product-service with a <em>separate</em> secret, for that one product, for 5 minutes.</p>
+        </div>
+        <button class="btn sm" id="orders-refresh">Refresh</button>
+      </div>
+      <div id="orders-body"></div>
+      <div class="card" id="download-result" hidden></div>
+    </section>
+
+    <!-- ================= ADMIN ================= -->
+    <section id="tab-admin" class="stack" hidden>
+      <div>
+        <h1>Admin: manage catalog</h1>
+        <p class="lede">Create, edit and delete products in <code>product-service</code>. It reads the <code>role</code> claim from your JWT and only allows <code>ADMIN</code>.</p>
+      </div>
+      <div class="notice warn" id="admin-note" hidden></div>
+
+      <form class="card" id="product-form">
+        <h2 id="product-form-title">Add a product</h2>
+        <div class="two">
+          <div class="field" style="margin:0"><label for="pf-name">Name</label><input id="pf-name" required placeholder="e.g. Spring Boot Handbook"></div>
+          <div class="field" style="margin:0"><label for="pf-type">File type</label>
+            <input id="pf-type" list="file-types" required placeholder="PDF">
+            <datalist id="file-types"><option>PDF</option><option>EPUB</option><option>ZIP</option><option>MP4</option><option>MP3</option><option>PNG</option><option>LICENSE_KEY</option></datalist>
+          </div>
+        </div>
+        <div class="field"><label for="pf-price">Price</label><input id="pf-price" type="number" min="0.01" step="0.01" required placeholder="499.00"></div>
+        <div class="form-actions">
+          <button class="btn primary" type="submit" id="pf-submit">Add product</button>
+          <button class="btn" type="button" id="pf-cancel" hidden>Cancel edit</button>
+        </div>
+        <div class="notice" id="product-form-msg" hidden style="margin-top:12px"></div>
+      </form>
+
+      <div class="card">
+        <h2>Products</h2>
+        <div id="admin-table"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= API LOG ================= -->
+  <aside class="card log" aria-label="API call log">
+    <div class="log-head spread">
+      <div>
+        <h2 style="margin:0">Live API log</h2>
+        <div class="small muted">Every call from this page, newest first</div>
+      </div>
+      <button class="btn sm" id="log-clear">Clear</button>
+    </div>
+    <div class="log-list" id="log-list"><div class="log-item muted">No calls yet.</div></div>
+  </aside>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = (sel) => document.querySelector(sel);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const money = (n) => "₹" + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtTime = (d) => new Date(d).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+  // ---------------- session ----------------
+  const store = {
+    get() { try { return JSON.parse(localStorage.getItem("bv.session") || "null"); } catch { return null; } },
+    set(v) { try { v ? localStorage.setItem("bv.session", JSON.stringify(v)) : localStorage.removeItem("bv.session"); } catch {} },
+  };
+  let session = store.get();
+  if (session && decodeJwt(session.token)?.payload?.exp * 1000 < Date.now()) { session = null; store.set(null); }
+
+  function decodeJwt(token) {
+    try {
+      const [h, p] = token.split(".");
+      const dec = (s) => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(s.length / 4) * 4, "=")))));
+      return { header: dec(h), payload: dec(p) };
+    } catch { return null; }
+  }
+  const isAdmin = () => session?.role === "ADMIN";
+
+  // ---------------- API + log ----------------
+  const serviceFor = (path) =>
+    path.startsWith("/api/users") ? "user-service" :
+    path.startsWith("/api/products") ? "product-service" :
+    path.startsWith("/api/orders") ? "order-service" :
+    path.startsWith("/eureka") ? "eureka-server" :
+    (path.match(/^\/status\/([a-z-]+)/) || [])[1] || "api-gateway";
+
+  const logEntries = [];
+  function logCall(e) {
+    if (e.quiet) return;
+    logEntries.unshift(e);
+    if (logEntries.length > 80) logEntries.pop();
+    renderLog();
+  }
+  function renderLog() {
+    const list = $("#log-list");
+    if (!logEntries.length) { list.innerHTML = '<div class="log-item muted">No calls yet.</div>'; return; }
+    list.innerHTML = logEntries.map((e) => {
+      const cls = e.status >= 200 && e.status < 300 ? "ok" : e.status >= 400 && e.status < 500 ? "warn" : "bad";
+      const who = e.status === 401 && e.gatewayReject ? "rejected at gateway (no/invalid JWT)" : "→ " + e.service;
+      return `<div class="log-item">
+        <div class="line"><span class="method">${esc(e.method)}</span><span class="path">${esc(e.shortPath)}</span><span class="pill ${cls}">${e.status || "ERR"}</span></div>
+        <div class="meta">${esc(who)} · ${e.ms} ms · ${e.time}${e.auth ? " · 🔑 JWT" : ""}</div>
+      </div>`;
+    }).join("");
+  }
+
+  async function api(method, path, body, opts = {}) {
+    const headers = { Accept: "application/json" };
+    const sendAuth = opts.auth !== false && session?.token;
+    if (sendAuth) headers.Authorization = "Bearer " + session.token;
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const t0 = performance.now();
+    let res, data = null, text = "";
+    try {
+      res = await fetch(path, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+      text = await res.text();
+      try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+    } catch (err) {
+      logCall({ method, shortPath: shorten(path), service: serviceFor(path), status: 0, ms: Math.round(performance.now() - t0), time: new Date().toLocaleTimeString(), auth: !!sendAuth, quiet: opts.quiet });
+      throw { status: 0, message: "Could not reach the gateway on :8080. Is it running?" };
+    }
+    // The gateway rejects bad/missing JWTs itself with an empty-body 401.
+    const gatewayReject = res.status === 401 && !text;
+    logCall({ method, shortPath: shorten(path), service: serviceFor(path), status: res.status, ms: Math.round(performance.now() - t0), time: new Date().toLocaleTimeString(), auth: !!sendAuth, gatewayReject, quiet: opts.quiet });
+    if (!res.ok) {
+      let message = data?.message;
+      if (!message) message =
+        res.status === 401 ? (gatewayReject ? "Rejected by the API gateway: log in first (or your session expired)." : "Unauthorized") :
+        res.status === 403 ? "Forbidden" :
+        res.status === 503 ? "Service unavailable: it may still be registering with Eureka. Try again in a few seconds." :
+        `Request failed (${res.status})`;
+      if (gatewayReject && session) { logout(true); message = "Your session expired. Please log in again."; }
+      throw { status: res.status, message };
+    }
+    return data;
+  }
+  const shorten = (p) => p.replace(/token=[^&]+/, (m) => "token=" + m.slice(6, 16) + "…");
+
+  // ---------------- toast ----------------
+  let toastTimer;
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
+  }
+
+  // ---------------- tabs ----------------
+  const tabs = ["overview", "account", "catalog", "orders", "admin"];
+  function showTab(name) {
+    if (!tabs.includes(name)) name = "overview";
+    tabs.forEach((t) => { $("#tab-" + t).hidden = t !== name; });
+    document.querySelectorAll("#nav button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === name));
+    if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
+    if (name === "catalog") loadCatalog();
+    if (name === "orders") loadOrders();
+    if (name === "admin") loadAdmin();
+    if (name === "overview") loadStatus();
+  }
+  $("#nav").addEventListener("click", (e) => { const b = e.target.closest("button[data-tab]"); if (b) showTab(b.dataset.tab); });
+
+  // ---------------- header session chip ----------------
+  function renderSession() {
+    const el = $("#session");
+    if (!session) {
+      el.innerHTML = `<span class="muted">Not signed in</span><button class="btn sm primary" id="go-login">Log in</button>`;
+      $("#go-login").onclick = () => showTab("account");
+    } else {
+      el.innerHTML = `<span><b>${esc(session.username)}</b></span><span class="pill ${isAdmin() ? "accent" : ""}">${esc(session.role)}</span><span class="muted small" id="exp-chip"></span><button class="btn sm" id="logout">Log out</button>`;
+      $("#logout").onclick = () => logout();
+    }
+    $("#account-forms").hidden = !!session;
+    $("#account-session").hidden = !session;
+    if (session) renderJwt();
+    tickExpiry();
+  }
+  function tickExpiry() {
+    const chip = $("#exp-chip");
+    if (!session || !chip) return;
+    const exp = decodeJwt(session.token)?.payload?.exp * 1000;
+    const left = exp - Date.now();
+    if (left <= 0) { logout(true); toast("Session expired. Please log in again."); return; }
+    chip.textContent = Math.floor(left / 60000) + " min left";
+  }
+  setInterval(tickExpiry, 30000);
+
+  function renderJwt() {
+    const parts = session.token.split(".");
+    $("#jwt-raw").innerHTML = `<span class="h">${esc(parts[0])}</span>.<span class="p">${esc(parts[1])}</span>.<span class="s">${esc(parts[2])}</span>`;
+    const d = decodeJwt(session.token);
+    $("#jwt-header").textContent = JSON.stringify(d.header, null, 2);
+    const p = { ...d.payload };
+    $("#jwt-payload").textContent = JSON.stringify(p, null, 2) +
+      `\n\n// iat = ${new Date(p.iat * 1000).toLocaleTimeString()}\n// exp = ${new Date(p.exp * 1000).toLocaleTimeString()}`;
+    $("#session-kv").innerHTML = `
+      <dt>Username</dt><dd>${esc(session.username)}</dd>
+      <dt>Role</dt><dd>${esc(session.role)}</dd>
+      <dt>Expires</dt><dd>${esc(new Date(p.exp * 1000).toLocaleString())}</dd>
+      <dt>Issued by</dt><dd>user-service (POST /api/users/login or /register)</dd>`;
+  }
+
+  function setSession(auth) {
+    session = { token: auth.token, username: auth.username, role: auth.role };
+    store.set(session);
+    renderSession();
+  }
+  function logout(silent) {
+    session = null; store.set(null); renderSession();
+    if (!silent) toast("Logged out");
+    const active = document.querySelector("#nav button[aria-selected=true]")?.dataset.tab;
+    if (active === "orders") loadOrders();
+    if (active === "admin") loadAdmin();
+  }
+  $("#logout-2").onclick = () => logout();
+
+  // ---------------- account ----------------
+  function formError(id, err) { const el = $(id); el.textContent = err.message; el.hidden = false; }
+
+  // Login captcha: a fresh code is drawn for every login attempt.
+  // Checked in the browser only; user-service does not verify it.
+  let captchaCode = "";
+  function newCaptcha() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O, 1/I lookalikes
+    captchaCode = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const cv = $("#captcha-canvas"), ctx = cv.getContext("2d");
+    const css = getComputedStyle(document.documentElement);
+    const ink = css.getPropertyValue("--text").trim(), muted = css.getPropertyValue("--muted").trim();
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    for (let i = 0; i < 5; i++) { // noise lines
+      ctx.strokeStyle = muted; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(Math.random() * cv.width, Math.random() * cv.height); ctx.lineTo(Math.random() * cv.width, Math.random() * cv.height); ctx.stroke();
+    }
+    ctx.globalAlpha = 1; ctx.fillStyle = ink; ctx.textBaseline = "middle";
+    [...captchaCode].forEach((ch, i) => {
+      ctx.save();
+      ctx.translate(16 + i * 25, cv.height / 2 + (Math.random() * 8 - 4));
+      ctx.rotate((Math.random() - 0.5) * 0.6);
+      ctx.font = `bold ${20 + Math.floor(Math.random() * 5)}px ${css.getPropertyValue("--mono")}`;
+      ctx.fillText(ch, -7, 0);
+      ctx.restore();
+    });
+    for (let i = 0; i < 30; i++) { // noise dots
+      ctx.fillStyle = muted; ctx.fillRect(Math.random() * cv.width, Math.random() * cv.height, 1.5, 1.5);
+    }
+    $("#li-captcha").value = "";
+  }
+  $("#captcha-refresh").onclick = () => { newCaptcha(); $("#li-captcha").focus(); };
+
+  $("#login-form").addEventListener("submit", async (e) => {
+    e.preventDefault(); $("#login-error").hidden = true;
+    const typed = $("#li-captcha").value.trim().toUpperCase();
+    if (typed !== captchaCode) {
+      formError("#login-error", { message: "Captcha didn't match. Try the new one." });
+      newCaptcha(); $("#li-captcha").focus();
+      return;
+    }
+    try {
+      const auth = await api("POST", "/api/users/login", { username: $("#li-user").value.trim(), password: $("#li-pass").value }, { auth: false });
+      setSession(auth); e.target.reset(); toast(`Welcome back, ${auth.username}`);
+    } catch (err) { formError("#login-error", err); }
+    newCaptcha(); // each login attempt uses a fresh captcha
+  });
+  newCaptcha();
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", newCaptcha);
+  $("#register-form").addEventListener("submit", async (e) => {
+    e.preventDefault(); $("#register-error").hidden = true;
+    try {
+      const auth = await api("POST", "/api/users/register", { username: $("#rg-user").value.trim(), email: $("#rg-email").value.trim(), password: $("#rg-pass").value }, { auth: false });
+      setSession(auth); e.target.reset(); toast(`Account created: ${auth.username}`);
+    } catch (err) { formError("#register-error", err); }
+  });
+
+  // ---------------- status ----------------
+  const SERVICES = [
+    { name: "eureka-server", port: 8761, desc: "Service registry: every other service registers here" },
+    { name: "api-gateway", port: 8080, health: "/actuator/health", info: "/actuator/info" },
+    { name: "user-service", port: 8081, health: "/status/user-service/health", info: "/status/user-service/info" },
+    { name: "product-service", port: 8082, health: "/status/product-service/health", info: "/status/product-service/info" },
+    { name: "order-service", port: 8083, health: "/status/order-service/health", info: "/status/order-service/info" },
+  ];
+  async function loadStatus() {
+    const grid = $("#status-grid");
+    if (!grid.children.length) grid.innerHTML = SERVICES.map((s) => statusCard(s, null)).join("");
+    let registry = {};
+    let eurekaUp = false;
+    try {
+      const apps = await api("GET", "/eureka/apps", undefined, { auth: false, quiet: true });
+      eurekaUp = true;
+      for (const app of apps?.applications?.application || []) {
+        registry[app.name.toLowerCase()] = (app.instance || []).map((i) => i.status);
+      }
+    } catch {}
+    const results = await Promise.all(SERVICES.map(async (s) => {
+      if (s.name === "eureka-server") return { ...s, up: eurekaUp, instances: null };
+      let up = false, info = null;
+      try { up = (await api("GET", s.health, undefined, { auth: false, quiet: true }))?.status === "UP"; } catch {}
+      try { info = (await api("GET", s.info, undefined, { auth: false, quiet: true }))?.app; } catch {}
+      return { ...s, up, desc: info?.description || s.desc || "", instances: registry[s.name] || [] };
+    }));
+    grid.innerHTML = results.map((r) => statusCard(r, r)).join("");
+    $("#status-updated").textContent = "Updated " + new Date().toLocaleTimeString();
+  }
+  function statusCard(s, r) {
+    const state = !r ? `<span class="pill">checking…</span>` : r.up ? `<span class="pill ok"><span class="dot"></span>UP</span>` : `<span class="pill bad"><span class="dot"></span>DOWN</span>`;
+    let reg = "";
+    if (r && r.instances) {
+      const n = r.instances.filter((x) => x === "UP").length;
+      reg = n ? `<span class="pill accent">${n} instance${n > 1 ? "s" : ""} in Eureka</span>` : `<span class="pill warn">not in Eureka</span>`;
+    }
+    const link = s.name === "eureka-server" ? `<a class="small" href="http://localhost:8761" target="_blank" rel="noopener">Open dashboard ↗</a>` : "";
+    return `<div class="card svc">
+      <div class="spread"><span class="name">${esc(s.name)}</span>${state}</div>
+      <div class="muted small">port ${s.port}</div>
+      <div class="desc">${esc((r && r.desc) || s.desc || "")}</div>
+      <div class="row">${reg}${link}</div>
+    </div>`;
+  }
+  $("#status-refresh").onclick = loadStatus;
+  setInterval(() => { if (!$("#tab-overview").hidden) loadStatus(); }, 15000);
+
+  // ---------------- catalog ----------------
+  let products = [];
+  async function fetchProducts() { products = (await api("GET", "/api/products", undefined, { auth: false })) || []; return products; }
+  async function loadCatalog() {
+    const grid = $("#product-grid");
+    try { await fetchProducts(); }
+    catch (err) { grid.innerHTML = `<div class="notice bad">${esc(err.message)}</div>`; return; }
+    if (!products.length) {
+      grid.innerHTML = `<div class="empty" style="grid-column:1/-1">No products yet.<br><span class="small">An ADMIN can add some on the <a href="#admin">Admin</a> tab.</span></div>`;
+      return;
+    }
+    grid.innerHTML = products.map((p) => `
+      <div class="card product">
+        <div class="spread"><span class="pill">${esc(p.fileType)}</span><span class="muted small">#${p.id}</span></div>
+        <div class="title">${esc(p.name)}</div>
+        <div class="price">${money(p.price)}</div>
+        <button class="btn primary" data-buy="${p.id}">${session ? "Buy now" : "Log in to buy"}</button>
+      </div>`).join("");
+  }
+  $("#product-grid").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-buy]"); if (!b) return;
+    if (!session) { showTab("account"); toast("Log in first to buy"); return; }
+    b.disabled = true; b.textContent = "Processing…";
+    try {
+      const order = await api("POST", "/api/orders", { productId: Number(b.dataset.buy) });
+      toast(`Order #${order.orderId} placed: ${order.productName}`);
+      showTab("orders");
+    } catch (err) {
+      toast(err.message); b.disabled = false; b.textContent = "Buy now";
+    }
+  });
+  $("#catalog-refresh").onclick = loadCatalog;
+
+  // ---------------- orders ----------------
+  let orders = [];
+  const freshLinks = {}; // orderId -> newer download link fetched from product-service
+  async function loadOrders() {
+    const body = $("#orders-body");
+    if (!session) { body.innerHTML = `<div class="empty">Log in to see your orders. <button class="btn sm primary" onclick="location.hash='account'">Log in</button></div>`; return; }
+    try { orders = (await api("GET", "/api/orders")) || []; }
+    catch (err) { body.innerHTML = `<div class="notice bad">${esc(err.message)}</div>`; return; }
+    if (!orders.length) { body.innerHTML = `<div class="empty">No orders yet. Buy something from the <a href="#catalog">Catalog</a>.</div>`; return; }
+    orders.sort((a, b) => b.orderId - a.orderId);
+    renderOrders();
+  }
+  function linkFor(o) { return freshLinks[o.orderId] || o.downloadLink; }
+  function tokenOf(link) { return new URL(link, location.origin).searchParams.get("token"); }
+  function renderOrders() {
+    $("#orders-body").innerHTML = `<div class="card table-wrap"><table>
+      <thead><tr><th>Order</th><th>Product</th><th>Price</th><th>Status</th><th>Placed</th><th>Download link</th><th></th></tr></thead>
+      <tbody>${orders.map((o) => {
+        const exp = decodeJwt(tokenOf(linkFor(o)))?.payload?.exp * 1000;
+        const left = exp - Date.now();
+        const expPill = !exp ? `<span class="pill">unknown</span>` : left > 0 ? `<span class="pill ok">valid · ${Math.ceil(left / 60000)} min</span>` : `<span class="pill warn">expired</span>`;
+        return `<tr>
+          <td class="num">#${o.orderId}</td>
+          <td>${esc(o.productName)}</td>
+          <td class="num">${money(o.price)}</td>
+          <td><span class="pill ${o.status === "PAID" ? "ok" : "bad"}">${esc(o.status)}</span></td>
+          <td class="small">${esc(fmtTime(o.createdAt))}</td>
+          <td>${expPill}</td>
+          <td><div class="row" style="flex-wrap:nowrap">
+            <button class="btn sm primary" data-dl="${o.orderId}">Download</button>
+            <button class="btn sm" data-inspect="${o.orderId}">Token</button>
+            <button class="btn sm" data-fresh="${o.orderId}" title="Ask product-service for a new 5-minute link">New link</button>
+          </div></td>
+        </tr>`;
+      }).join("")}</tbody></table></div>`;
+  }
+  function showResult(html) { const r = $("#download-result"); r.innerHTML = html; r.hidden = false; r.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+  $("#orders-body").addEventListener("click", async (e) => {
+    const dl = e.target.closest("[data-dl]"), ins = e.target.closest("[data-inspect]"), fr = e.target.closest("[data-fresh]");
+    const id = Number((dl || ins || fr)?.dataset.dl || (dl || ins || fr)?.dataset.inspect || (dl || ins || fr)?.dataset.fresh);
+    const o = orders.find((x) => x.orderId === id); if (!o) return;
+    if (dl) {
+      try {
+        // The download endpoint is public at the gateway; the download token in the URL is the only proof needed.
+        const r = await api("GET", linkFor(o), undefined, { auth: false });
+        showResult(`<h2>Download authorized</h2><div class="notice ok">${esc(r.message)}</div>
+          <dl class="kv" style="margin-top:12px"><dt>Product</dt><dd>#${esc(r.productId)}</dd><dt>File type</dt><dd>${esc(r.fileType)}</dd></dl>
+          <p class="small muted" style="margin-bottom:0">This demo has no real files, so product-service returns a confirmation instead of the file. No login JWT was sent; the download token alone was enough.</p>`);
+      } catch (err) {
+        showResult(`<h2>Download refused</h2><div class="notice bad">${esc(err.message)}</div>
+          <p class="small muted" style="margin-bottom:0">Download tokens only last 5 minutes. Click <b>New link</b> to get a fresh one from product-service.</p>`);
+      }
+    }
+    if (ins) {
+      const tok = tokenOf(linkFor(o)); const d = decodeJwt(tok);
+      const p = d?.payload || {};
+      showResult(`<h2>Download token for order #${o.orderId}</h2>
+        <p class="small muted" style="margin-top:0">Signed by product-service with <code>download.jwt.secret</code>, which is different from the login secret, so it can't be used to log in.</p>
+        <div class="jwt">${esc(tok)}</div>
+        <div class="two" style="margin-top:12px">
+          <div><label>Payload (claims)</label><pre>${esc(JSON.stringify(p, null, 2))}</pre></div>
+          <div><label>What product-service checks</label><pre>purpose   == "download"  ${p.purpose === "download" ? "✓" : "✗"}
+productId == ${o.productId}          ${p.productId === o.productId ? "✓" : "✗"}
+exp       &gt; now         ${p.exp * 1000 > Date.now() ? "✓" : "✗ expired"}
+signature valid         (checked server-side)</pre></div>
+        </div>`);
+    }
+    if (fr) {
+      try {
+        const t = await api("POST", `/api/products/${o.productId}/download-token`);
+        freshLinks[o.orderId] = t.downloadUrl;
+        renderOrders();
+        toast(`New link for order #${o.orderId}, valid until ${new Date(t.expiresAt).toLocaleTimeString()}`);
+      } catch (err) { toast(err.message); }
+    }
+  });
+  $("#orders-refresh").onclick = loadOrders;
+  setInterval(() => { if (!$("#tab-orders").hidden && orders.length) renderOrders(); }, 30000);
+
+  // ---------------- admin ----------------
+  let editingId = null;
+  async function loadAdmin() {
+    const note = $("#admin-note");
+    if (!session) { note.hidden = false; note.innerHTML = `You're not signed in. Changes will be <b>rejected by the gateway</b> (401). <a href="#account">Log in</a> with an ADMIN account.`; }
+    else if (!isAdmin()) {
+      note.hidden = false;
+      note.innerHTML = `You're signed in as <b>${esc(session.username)}</b> with role <b>${esc(session.role)}</b>. product-service will refuse changes with 403 Forbidden. Try it to see role enforcement.<br>
+        <span class="small">Registration always creates USER accounts. To make yourself admin, run this in pgAdmin on <code>bytevault_users</code>, then log out and in again:<br><code>UPDATE users SET role = 'ADMIN' WHERE username = '${esc(session.username)}';</code></span>`;
+    } else note.hidden = true;
+
+    const wrap = $("#admin-table");
+    try { await fetchProducts(); } catch (err) { wrap.innerHTML = `<div class="notice bad">${esc(err.message)}</div>`; return; }
+    if (!products.length) { wrap.innerHTML = `<div class="empty">No products yet. Add one above.</div>`; return; }
+    wrap.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Price</th><th></th></tr></thead>
+      <tbody>${products.map((p) => `<tr>
+        <td class="num">#${p.id}</td><td>${esc(p.name)}</td><td><span class="pill">${esc(p.fileType)}</span></td><td class="num">${money(p.price)}</td>
+        <td><div class="row" style="justify-content:flex-end; flex-wrap:nowrap">
+          <button class="btn sm" data-edit="${p.id}">Edit</button>
+          <button class="btn sm danger" data-del="${p.id}">Delete</button>
+        </div></td></tr>`).join("")}</tbody></table></div>`;
+  }
+  function formMsg(kind, text) { const m = $("#product-form-msg"); m.className = "notice " + kind; m.textContent = text; m.hidden = false; }
+  function resetProductForm() {
+    editingId = null; $("#product-form").reset();
+    $("#product-form-title").textContent = "Add a product"; $("#pf-submit").textContent = "Add product"; $("#pf-cancel").hidden = true;
+  }
+  $("#pf-cancel").onclick = () => { resetProductForm(); $("#product-form-msg").hidden = true; };
+  $("#product-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body = { name: $("#pf-name").value.trim(), fileType: $("#pf-type").value.trim(), price: Number($("#pf-price").value) };
+    try {
+      const p = editingId
+        ? await api("PUT", `/api/products/${editingId}`, body)
+        : await api("POST", "/api/products", body);
+      formMsg("ok", `${editingId ? "Updated" : "Created"} product #${p.id}: ${p.name}`);
+      resetProductForm(); loadAdmin();
+    } catch (err) { formMsg("bad", `${err.status || ""} ${err.message}`.trim()); }
+  });
+  $("#admin-table").addEventListener("click", async (e) => {
+    const ed = e.target.closest("[data-edit]"), del = e.target.closest("[data-del]");
+    if (ed) {
+      const p = products.find((x) => x.id === Number(ed.dataset.edit)); if (!p) return;
+      editingId = p.id; $("#pf-name").value = p.name; $("#pf-type").value = p.fileType; $("#pf-price").value = p.price;
+      $("#product-form-title").textContent = `Edit product #${p.id}`; $("#pf-submit").textContent = "Save changes"; $("#pf-cancel").hidden = false;
+      $("#product-form-msg").hidden = true;
+      $("#product-form").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    if (del) {
+      // Two-step inline confirm instead of a browser dialog.
+      if (del.dataset.armed !== "1") { del.dataset.armed = "1"; del.textContent = "Confirm?"; setTimeout(() => { del.dataset.armed = ""; del.textContent = "Delete"; }, 3000); return; }
+      try { await api("DELETE", `/api/products/${del.dataset.del}`); toast(`Deleted product #${del.dataset.del}`); loadAdmin(); }
+      catch (err) { formMsg("bad", `${err.status || ""} ${err.message}`.trim()); del.dataset.armed = ""; del.textContent = "Delete"; }
+    }
+  });
+
+  // ---------------- boot ----------------
+  $("#log-clear").onclick = () => { logEntries.length = 0; renderLog(); };
+  window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+  renderSession();
+  showTab(location.hash.slice(1) || "overview");
+})();
+</script>
+</body>
+</html>

@@ -16,8 +16,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Every order-service endpoint requires a buyer to be logged in, so unlike
- * product-service there is no public path to exempt here.
+ * Every order-service API endpoint requires a buyer to be logged in; only the
+ * actuator health/info endpoints (linked from the Eureka dashboard) and the
+ * load-balancing instance endpoint are exempt.
  */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -30,6 +31,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     public JwtAuthFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/actuator/")
+                || ("GET".equalsIgnoreCase(request.getMethod()) && path.equals("/api/orders/instance"));
     }
 
     @Override

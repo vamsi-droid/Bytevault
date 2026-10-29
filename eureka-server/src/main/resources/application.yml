@@ -13,6 +13,11 @@ eureka:
     fetch-registry: false
   instance:
     hostname: localhost
+  server:
+    # Publish newly registered instances within seconds instead of the default
+    # 30s response cache, so the gateway can route to them right after startup.
+    use-read-only-response-cache: false
+    response-cache-update-interval-ms: 3000
 
 logging:
   level:

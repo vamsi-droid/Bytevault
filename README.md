@@ -90,9 +90,52 @@ so no service ever hard-codes another's host or port.
 - Role is enforced at the endpoint level: `product-service` requires
   `role == ADMIN` (via the `authRole` request attribute set by its JWT
   filter) to create/update/delete products; anyone authenticated can
-  purchase.
+  purchase. `user-service` and `order-service` apply the same check to their
+  admin-only endpoints.
+- `user-service` verifies the token too (its own `JwtAuthFilter`): only
+  register, login and `/api/users/instance` are public.
+- Registration always creates a `USER`. A default `ADMIN` account
+  (`admin` / `admin123`, override with `ADMIN_USERNAME` / `ADMIN_PASSWORD` /
+  `ADMIN_EMAIL`) is created on first startup by `AdminSeeder`.
 
-## 6. API Gateway Configuration
+## 6. CRUD Operations
+
+All calls go through the gateway (`http://localhost:8080`).
+
+| Resource | Create | Read | Update | Delete |
+|---|---|---|---|---|
+| Users | `POST /api/users/register` | `GET /api/users/me`; `GET /api/users`, `GET /api/users/{id}` (ADMIN) | `PUT /api/users/me`; `PUT /api/users/{id}`, `PUT /api/users/{id}/role` (ADMIN) | `DELETE /api/users/me`; `DELETE /api/users/{id}` (ADMIN) |
+| Products | `POST /api/products` (ADMIN) | `GET /api/products`, `GET /api/products/{id}` (public) | `PUT /api/products/{id}` (ADMIN) | `DELETE /api/products/{id}` (ADMIN) |
+| Orders | `POST /api/orders` | `GET /api/orders`, `GET /api/orders/{id}`; `GET /api/orders/all` (ADMIN) | `PUT /api/orders/{id}/cancel` | `DELETE /api/orders/{id}` |
+
+Users only ever see and change their own orders (`findByIdAndUsername`).
+Cancelling an order sets it to `CANCELLED` and revokes its download link.
+
+## 7. Load Balancing
+
+Load balancing is client-side, through Spring Cloud LoadBalancer
+(round-robin) over the instances Eureka reports:
+
+- **Gateway → services**: every route uses `lb://<service-name>`.
+- **Service → service**: `order-service`'s `@FeignClient(name =
+  "product-service")` balances its calls the same way.
+
+To run more than one instance of a service, start it again with a different
+`PORT` (each service's `server.port` is `${PORT:<default>}`), e.g.
+`PORT=8092 mvn -pl product-service spring-boot:run`. Each instance registers
+under its own `instance-id` (`<name>:<port>`), and the Eureka/LoadBalancer
+refresh intervals are shortened to 5s so a new instance gets traffic almost
+immediately.
+
+To see which instance answered:
+- every response carries an `X-Served-By: <service>:<port>` header, and each
+  instance logs the requests it handles;
+- `GET /api/{users|products|orders}/instance` (public) returns the instance id.
+  Calling `GET /api/products/instance` repeatedly with two product-service
+  instances running alternates `product-service:8082` /
+  `product-service:8092`.
+
+## 8. API Gateway Configuration
 
 `api-gateway` (port `8080`, Spring Cloud Gateway) is the single entry point:
 
@@ -105,11 +148,26 @@ so no service ever hard-codes another's host or port.
   browsing, the token-guarded download endpoint) and rejects everything else
   with `401` if the `Authorization` header is missing or the JWT doesn't
   verify — before the request ever reaches a backend service.
+- **Retry on failure** — a default `Retry` filter re-sends a failed `GET`
+  (5xx / connection refused) up to twice; the load balancer picks another
+  instance, so losing one instance is invisible to clients. Non-GET requests
+  are not retried, to avoid e.g. duplicate orders.
 - This is defense in depth, not a replacement for per-service checks:
   `product-service` and `order-service` still verify the same token again,
   so calling a service directly (bypassing the gateway) is still safe.
 
-## 7. Running locally
+## 9. Running locally
+
+The quickest way, which also starts a second `product-service` instance on
+`8092`:
+
+```
+scripts/start-all.sh    # build + start everything in the background (logs/)
+scripts/demo.sh         # walks through every feature with curl, via the gateway
+scripts/stop-all.sh
+```
+
+Or start each service by hand:
 
 ```
 mvn -pl eureka-server spring-boot:run       # 8761
@@ -117,6 +175,7 @@ mvn -pl user-service spring-boot:run        # 8081
 mvn -pl product-service spring-boot:run     # 8082
 mvn -pl order-service spring-boot:run       # 8083
 mvn -pl api-gateway spring-boot:run         # 8080, entry point
+PORT=8092 mvn -pl product-service spring-boot:run   # optional 2nd instance
 ```
 
 Each service needs its own Postgres database (`bytevault_users`,

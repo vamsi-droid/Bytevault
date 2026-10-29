@@ -1,9 +1,19 @@
+# Override with PORT=<n> to start a second instance of this service, e.g.
+#   PORT=8093 mvn -pl order-service spring-boot:run
+# Both register with Eureka under the same name and the gateway / Feign
+# load-balance requests across them.
 server:
-  port: 8083
+  port: ${PORT:8083}
 
 spring:
   application:
     name: order-service
+  # Spring Cloud LoadBalancer caches the Eureka instance list; keep it short so
+  # a second instance starts receiving traffic within seconds.
+  cloud:
+    loadbalancer:
+      cache:
+        ttl: 5s
   datasource:
     url: jdbc:postgresql://localhost:5434/bytevault_orders
     username: postgres
@@ -22,14 +32,39 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    # Pick up a newly started instance within seconds (default is 30s)
+    registry-fetch-interval-seconds: 5
   instance:
-    prefer-ip-address: true
+    # Register as localhost rather than the machine's network IP: everything
+    # runs on one machine, and a Wi-Fi IP change would otherwise leave Eureka
+    # (and the gateway's load balancer) pointing at a dead address.
+    prefer-ip-address: false
+    hostname: localhost
+    # Unique per instance so two copies on one machine don't overwrite each other
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 5
 
 # Must be byte-for-byte identical to user-service / product-service / api-gateway
 # so order-service can verify a login JWT on its own.
 jwt:
   secret: bytevault-marketplace-super-secret-jwt-signing-key-2024-college-project-demo-only
   expiration-ms: 3600000
+
+# Exposes /actuator/info (the page Eureka's dashboard links to) and /actuator/health.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: order-service
+    description: Purchases and per-user order history
+    port: ${server.port}
 
 logging:
   level:

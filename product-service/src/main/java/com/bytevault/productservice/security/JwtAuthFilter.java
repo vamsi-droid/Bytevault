@@ -40,10 +40,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         String path = request.getServletPath();
 
+        if (path.startsWith("/actuator/")) {
+            return true; // health/info only, linked from the Eureka dashboard
+        }
         if (path.endsWith("/download")) {
             return true; // guarded by its own download token, not the login JWT
         }
-        return "GET".equalsIgnoreCase(method) && path.matches("^/api/products(/\\d+)?$");
+        return "GET".equalsIgnoreCase(method) && path.matches("^/api/products(/\\d+|/instance)?$");
     }
 
     @Override

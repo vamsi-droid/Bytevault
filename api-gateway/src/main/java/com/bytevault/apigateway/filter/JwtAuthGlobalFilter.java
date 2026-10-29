@@ -32,7 +32,12 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             new PublicRoute("POST", Pattern.compile("^/api/users/register$")),
             new PublicRoute("POST", Pattern.compile("^/api/users/login$")),
             new PublicRoute("GET", Pattern.compile("^/api/products(/\\d+)?$")),
-            new PublicRoute("GET", Pattern.compile("^/api/products/\\d+/download$"))
+            new PublicRoute("GET", Pattern.compile("^/api/products/\\d+/download$")),
+            // which instance served the request - for demonstrating load balancing
+            new PublicRoute("GET", Pattern.compile("^/api/(users|products|orders)/instance$")),
+            // read-only status for the dashboard page
+            new PublicRoute("GET", Pattern.compile("^/status/(user|product|order)-service/(health|info)$")),
+            new PublicRoute("GET", Pattern.compile("^/eureka/apps$"))
     );
 
     private final JwtValidator jwtValidator;

@@ -19,8 +19,24 @@
 | CRUD | `demo.sh` section 3: users, products, orders | `UserController`, `ProductController`, `OrderController` |
 | Load balancing | `demo.sh` section 4: alternating `product-service:8082` / `:8092`; `X-Served-By` header | `lb://` routes in `api-gateway/src/main/resources/application.yml`, `@FeignClient(name = "product-service")` |
 
-Accounts: `admin` / `admin123` (ADMIN, created on startup). Register any
-other user through `POST /api/users/register`.
+## Demo accounts and data
+
+| Role | Username | Password | Notes |
+|---|---|---|---|
+| ADMIN | `admin` | `admin123` | Created automatically on startup (`AdminSeeder`) |
+| USER | `buyer` | `buyer123` | Has one past order (Spring Boot Microservices Handbook) |
+
+The catalog holds 10 sample products (ebooks, courses, a license key,
+assets). Data lives in Postgres, so it survives restarts. Register more
+users from the dashboard's Account tab.
+
+The dashboard login has a captcha (checked in the browser only).
+
+## Checking everything
+
+`scripts/full-check.sh` runs 60 end-to-end checks against the running system
+(JWT edge cases, direct-to-service calls, validation, ownership, admin CRUD,
+load balancing, failover, health) and cleans up after itself.
 
 ## Likely questions
 

@@ -8,6 +8,7 @@ import java.time.Instant;
 public class OrderResponse {
 
     private Long orderId;
+    private String username;
     private Long productId;
     private String productName;
     private BigDecimal price;
@@ -16,9 +17,10 @@ public class OrderResponse {
     private Instant downloadLinkExpiresAt;
     private Instant createdAt;
 
-    public OrderResponse(Long orderId, Long productId, String productName, BigDecimal price, String status,
+    public OrderResponse(Long orderId, String username, Long productId, String productName, BigDecimal price, String status,
                           String downloadLink, Instant downloadLinkExpiresAt, Instant createdAt) {
         this.orderId = orderId;
+        this.username = username;
         this.productId = productId;
         this.productName = productName;
         this.price = price;
@@ -31,6 +33,7 @@ public class OrderResponse {
     public static OrderResponse of(Order order, String productName, String downloadLink, Instant downloadLinkExpiresAt) {
         return new OrderResponse(
                 order.getId(),
+                order.getUsername(),
                 order.getProductId(),
                 productName,
                 order.getPrice(),
@@ -47,6 +50,14 @@ public class OrderResponse {
 
     public void setOrderId(Long orderId) {
         this.orderId = orderId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public Long getProductId() {

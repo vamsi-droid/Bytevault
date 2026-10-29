@@ -29,10 +29,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     public static final String ROLE_ATTRIBUTE = "authRole";
 
     private final JwtUtil jwtUtil;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    // Spring's ObjectMapper, not `new ObjectMapper()`: it has the java.time module,
+    // which ErrorResponse's Instant timestamp needs to serialize.
+    private final ObjectMapper objectMapper;
 
-    public JwtAuthFilter(JwtUtil jwtUtil) {
+    public JwtAuthFilter(JwtUtil jwtUtil, ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
+        this.objectMapper = objectMapper;
     }
 
     @Override
